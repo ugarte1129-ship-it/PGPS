@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ver Ubicación en Vivo</title>
+
+    <!-- SDK Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <!-- Leaflet (Mapas) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            text-align: center;
+        }
+        #map {
+            height: 80vh;
+            width: 100%;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #9c7aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Ver Ubicación en Vivo</h1>
+<input type="text" id="deviceId" placeholder="ID del dispositivo">
+<button onclick="conectar()">Conectar</button>
+<div id="map"></div>
+
+<script>
+    // CONFIGURACIÓN FIREBASE
+    const firebaseConfig = {
+        databaseURL: "https://pgps-252ee-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let map;
+    let marker;
+
+    function conectar() {
+        const deviceId = document.getElementById("deviceId").value.trim();
+        if (!deviceId) {
+            alert("Escribe un ID del dispositivo");
+            return;
+        }
+
+        // Inicializar mapa si no existe
+        if (!map) {
+            map = L.map('map').setView([20.67, -103.35], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+            marker = L.marker([0,0]).addTo(map);
+        }
+
+        // Escuchar cambios en Firebase en tiempo real
+        db.ref("ubicacion/" + deviceId).on("value", snapshot => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            const { lat, lng } = data;
+
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng]);
+        });
+    }
+</script>
+
+</body>
+</html>
